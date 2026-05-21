@@ -22,9 +22,11 @@ export interface MockCollection {
   name: string;
   description: string;
   isPrivate: boolean;
+  isFavorite: boolean;
   itemCount: number;
   // Dominant item type — drives the collection card background color.
   typeId: string;
+  updatedAt: string;
 }
 
 export interface MockItem {
@@ -68,64 +70,80 @@ export const collections: MockCollection[] = [
     name: "React Patterns",
     description: "Reusable hooks and component patterns.",
     isPrivate: false,
+    isFavorite: true,
     itemCount: 24,
     typeId: "type_snippet",
+    updatedAt: "2026-05-20T15:30:00.000Z",
   },
   {
     id: "col_context",
     name: "Context Files",
     description: "Project context and config files.",
     isPrivate: true,
+    isFavorite: false,
     itemCount: 12,
     typeId: "type_file",
+    updatedAt: "2026-05-19T10:00:00.000Z",
   },
   {
     id: "col_python",
     name: "Python Snippets",
     description: "Handy Python utilities and scripts.",
     isPrivate: false,
+    isFavorite: false,
     itemCount: 31,
     typeId: "type_snippet",
+    updatedAt: "2026-05-21T08:45:00.000Z",
   },
   {
     id: "col_ai_prompts",
     name: "AI Prompts Library",
     description: "Prompts for everyday dev workflows.",
     isPrivate: false,
+    isFavorite: true,
     itemCount: 18,
     typeId: "type_prompt",
+    updatedAt: "2026-05-18T13:20:00.000Z",
   },
   {
     id: "col_shell",
     name: "Shell Commands",
     description: "Frequently used terminal commands.",
     isPrivate: false,
+    isFavorite: true,
     itemCount: 27,
     typeId: "type_command",
+    updatedAt: "2026-05-17T09:10:00.000Z",
   },
   {
     id: "col_design",
     name: "Design Inspiration",
     description: "UI references and design links.",
     isPrivate: false,
+    isFavorite: false,
     itemCount: 15,
     typeId: "type_link",
+    updatedAt: "2026-05-16T18:05:00.000Z",
   },
   {
     id: "col_nextjs",
     name: "Next.js",
     description: "App Router patterns and snippets.",
     isPrivate: true,
+    isFavorite: false,
     itemCount: 20,
     typeId: "type_snippet",
+    updatedAt: "2026-05-15T11:40:00.000Z",
   },
   {
     id: "col_useful_links",
     name: "Useful Links",
     description: "Docs, tools, and references.",
     isPrivate: false,
+    isFavorite: false,
     itemCount: 22,
     typeId: "type_link",
+    updatedAt: "2026-05-14T16:55:00.000Z",
   },
 ];
 
