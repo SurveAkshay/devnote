@@ -7,8 +7,8 @@ This is phase 3 of 3 for the dashboard UI layout. Use the screenshot referenced 
 ## Requirements for phase 3
 
 - The main area to the right
-- Recent collections
 - Pinned Items
+- Recent collections
 - 10 Recent items
 - 4 stats cards at the top for number of items, collections, favorite items and favorite collections (Not in screenshot)
 
