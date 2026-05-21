@@ -2,19 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import {
-  Code,
-  File as FileIcon,
-  Image as ImageIcon,
-  Link as LinkIcon,
-  Lock,
-  NotebookPen,
-  Settings,
-  Sparkles,
-  StickyNote,
-  Terminal,
-  type LucideIcon,
-} from "lucide-react";
+import { Lock, NotebookPen, Settings } from "lucide-react";
 
 import {
   Avatar,
@@ -33,39 +21,8 @@ import {
   SidebarMenuButton,
   SidebarMenuItem,
 } from "@/components/ui/sidebar";
-import {
-  collections,
-  currentUser,
-  itemTypes,
-  type MockItemType,
-} from "@/lib/mock-data";
-
-// Maps the lucide icon names stored on item types to their components.
-const ICONS: Record<string, LucideIcon> = {
-  Code,
-  Sparkles,
-  StickyNote,
-  Terminal,
-  Link: LinkIcon,
-  File: FileIcon,
-  Image: ImageIcon,
-};
-
-// Per-type icon color, mapped to the nearest Tailwind palette class so the
-// color-coding lives in classes (not inline styles).
-const TYPE_COLOR: Record<string, string> = {
-  type_snippet: "text-blue-500",
-  type_prompt: "text-violet-500",
-  type_note: "text-yellow-400",
-  type_command: "text-orange-500",
-  type_link: "text-emerald-500",
-  type_file: "text-slate-400",
-  type_image: "text-pink-500",
-};
-
-const typeById = new Map<string, MockItemType>(
-  itemTypes.map((type) => [type.id, type])
-);
+import { getTypeIcon, TYPE_TEXT_COLOR } from "@/lib/item-type-meta";
+import { collections, currentUser, itemTypes } from "@/lib/mock-data";
 
 // Item types route to /items/{pluralName}, e.g. snippet -> /items/snippets.
 const typeHref = (name: string) => `/items/${name}s`;
@@ -88,10 +45,8 @@ export function AppSidebar() {
   const pathname = usePathname();
 
   const renderCollection = (id: string, name: string, isPrivate: boolean) => {
-    const type = typeById.get(
-      collections.find((c) => c.id === id)?.typeId ?? ""
-    );
-    const Icon = type ? ICONS[type.icon] ?? FileIcon : FileIcon;
+    const typeId = collections.find((c) => c.id === id)?.typeId ?? "";
+    const Icon = getTypeIcon(typeId);
     const href = `/collections/${id}`;
     return (
       <SidebarMenuItem key={id}>
@@ -100,7 +55,7 @@ export function AppSidebar() {
           tooltip={name}
           render={<Link href={href} />}
         >
-          <Icon className={type ? TYPE_COLOR[type.id] : undefined} />
+          <Icon className={TYPE_TEXT_COLOR[typeId]} />
           <span className="truncate">{name}</span>
         </SidebarMenuButton>
         {isPrivate && (
@@ -136,7 +91,7 @@ export function AppSidebar() {
           <SidebarGroupLabel>Library</SidebarGroupLabel>
           <SidebarMenu>
             {itemTypes.map((type) => {
-              const Icon = ICONS[type.icon] ?? FileIcon;
+              const Icon = getTypeIcon(type.id);
               const href = typeHref(type.name);
               return (
                 <SidebarMenuItem key={type.id}>
@@ -145,7 +100,7 @@ export function AppSidebar() {
                     tooltip={`${type.name}s`}
                     render={<Link href={href} />}
                   >
-                    <Icon className={TYPE_COLOR[type.id]} />
+                    <Icon className={TYPE_TEXT_COLOR[type.id]} />
                     <span className="capitalize">{type.name}s</span>
                   </SidebarMenuButton>
                 </SidebarMenuItem>
