@@ -1,0 +1,212 @@
+// Prisma 7 schema for DevNote.
+//
+// Notes specific to Prisma 7:
+//   - Generator provider is "prisma-client" (new Rust-free client),
+//     and the `output` path is required.
+//   - The datasource block does NOT include a `url`. Connection strings
+//     are configured in `prisma.config.ts` (DATABASE_URL for the app via
+//     the Neon WebSocket adapter, DIRECT_URL for the Prisma CLI).
+//   - Migrations only — never `prisma db push` (see CLAUDE.md /
+//     project-overview.md migration policy).
+
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+// ─────────────────────────────────────────────────────────────────────
+// AUTH (NextAuth v5 — @auth/prisma-adapter)
+// ─────────────────────────────────────────────────────────────────────
+
+model Account {
+  id                String  @id @default(cuid())
+  userId            String
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String?
+  access_token      String?
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String?
+  session_state     String?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+  @@index([userId])
+}
+
+model Session {
+  id           String   @id @default(cuid())
+  sessionToken String   @unique
+  userId       String
+  expires      DateTime
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+}
+
+model VerificationToken {
+  identifier String
+  token      String   @unique
+  expires    DateTime
+
+  @@unique([identifier, token])
+}
+
+// ─────────────────────────────────────────────────────────────────────
+// USER
+// ─────────────────────────────────────────────────────────────────────
+
+model User {
+  id            String    @id @default(cuid())
+  name          String?
+  email         String    @unique
+  emailVerified DateTime?
+  image         String?
+
+  // Billing
+  isPro                Boolean @default(false)
+  stripeCustomerId     String? @unique
+  stripeSubscriptionId String? @unique
+
+  // Relations
+  accounts    Account[]
+  sessions    Session[]
+  items       Item[]
+  collections Collection[]
+  customTypes ItemType[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+// ─────────────────────────────────────────────────────────────────────
+// ITEM
+// ─────────────────────────────────────────────────────────────────────
+
+enum ContentType {
+  TEXT
+  FILE
+}
+
+model Item {
+  id          String      @id @default(cuid())
+  title       String
+  description String?
+
+  contentType ContentType @default(TEXT)
+  content     String?     // text content (null if file)
+  fileUrl     String?     // R2 URL (null if text)
+  fileName    String?
+  fileSize    Int?        // bytes
+  url         String?     // for `link` type
+  language    String?     // optional, for code highlighting
+
+  // State flags.
+  // Effective public visibility = isPublished
+  //   AND NOT isArchived
+  //   AND (no collections OR ≥1 public collection)
+  // See "Visibility & Privacy Rules" in project-overview.md.
+  isFavorite  Boolean @default(false)
+  isPinned    Boolean @default(false)
+  isPublished Boolean @default(false)
+  isDrafted   Boolean @default(true)
+  isArchived  Boolean @default(false)
+
+  userId String
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  itemTypeId String
+  itemType   ItemType @relation(fields: [itemTypeId], references: [id])
+
+  collections ItemCollection[]
+  tags        Tag[]            @relation("ItemTags")
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([userId])
+  @@index([itemTypeId])
+  @@index([isPublished, isArchived, isDrafted])
+}
+
+// ─────────────────────────────────────────────────────────────────────
+// ITEM TYPE
+// ─────────────────────────────────────────────────────────────────────
+
+model ItemType {
+  id       String  @id @default(cuid())
+  name     String
+  icon     String  // lucide icon name
+  color    String  // hex color
+  isSystem Boolean @default(false)
+
+  // null for system types
+  userId String?
+  user   User?   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  items Item[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([userId, name])
+}
+
+// ─────────────────────────────────────────────────────────────────────
+// COLLECTION
+// ─────────────────────────────────────────────────────────────────────
+
+model Collection {
+  id          String  @id @default(cuid())
+  name        String
+  description String?
+  isPrivate   Boolean @default(false)
+
+  userId String
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  items ItemCollection[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([userId])
+}
+
+// ─────────────────────────────────────────────────────────────────────
+// ITEM ↔ COLLECTION (join)
+// ─────────────────────────────────────────────────────────────────────
+
+model ItemCollection {
+  itemId String
+  item   Item   @relation(fields: [itemId], references: [id], onDelete: Cascade)
+
+  collectionId String
+  collection   Collection @relation(fields: [collectionId], references: [id], onDelete: Cascade)
+
+  isFavorite    Boolean  @default(false)
+  defaultTypeId String?  // for new collections with no items yet
+  addedAt       DateTime @default(now())
+
+  @@id([itemId, collectionId])
+  @@index([collectionId])
+}
+
+// ─────────────────────────────────────────────────────────────────────
+// TAG
+// ─────────────────────────────────────────────────────────────────────
+
+model Tag {
+  id    String @id @default(cuid())
+  name  String @unique
+  items Item[] @relation("ItemTags")
+}
